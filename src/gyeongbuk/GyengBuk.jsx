@@ -55,15 +55,8 @@ export default function GyengBuk() {
       .style("fill", "#666");
   };
 
-  const clear = () => {
-    d3.select(chart.current).select('svg').remove();
-  }
-
   useEffect(() => {
-    clear();
-    return(
-      printD3()
-    )
+    printD3();
   }, []);
 
   return <div ref={chart}></div>;
