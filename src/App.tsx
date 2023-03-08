@@ -1,5 +1,5 @@
 import React from "react";
-import GyengBuk from "./gyeongbuk/GyengBuk";
+import GyengBuk from "./map/GyengBuk";
 function App() {
   return (
     <>
