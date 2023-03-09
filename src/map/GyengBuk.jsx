@@ -18,7 +18,7 @@ export default function GyengBuk() {
   const printD3 = () => {
     const width = 700; //지도의 넓이
     const height = 700; //지도의 높이
-    const initialScale = 5500; //확대시킬 값
+    const initialScale = 5400; //확대시킬 값
     const initialX = -11900; //초기 위치값 X
     const initialY = 4050; //초기 위치값 Y
 
@@ -50,8 +50,6 @@ export default function GyengBuk() {
       .append("path")
       .attr("d", path);
   };
-
-  console.log(1);
 
   useEffect(() => {
     printD3();
