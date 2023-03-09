@@ -51,6 +51,8 @@ export default function GyengBuk() {
       .attr("d", path);
   };
 
+  console.log(1);
+
   useEffect(() => {
     printD3();
   }, []);
