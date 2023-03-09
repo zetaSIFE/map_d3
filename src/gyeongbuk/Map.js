@@ -1,69 +1,88 @@
-import React, { useState, useEffect } from "react";
-import MapContext from "./MapContext";
-import "ol/ol.css";
-import { Map as OlMap, View } from "ol";
-import { defaults as defaultControls } from "ol/control";
-import { fromLonLat, get as getProjection } from "ol/proj";
-import { Tile as TileLayer } from "ol/layer";
-import { OSM } from "ol/source";
-import * as d3 from "d3";
+import { Map as OlMap } from "ol";
+import Stamen from "ol/source/Stamen.js";
+import View from "ol/View.js";
+import { Layer, Tile as TileLayer } from "ol/layer.js";
+import { fromLonLat, toLonLat, get as getProjection } from "ol/proj.js";
+import { getCenter, getWidth } from "ol/extent.js";
 import { feature } from "topojson-client";
-import TopoJSON from "ol/format/TopoJSON.js";
+import gbmap from "../mapData/gbmap_topo.json";
+import * as d3 from "d3";
+import { useEffect, useState } from "react";
+import MapContext from "./MapContext";
+import { OSM } from "ol/source";
+import { defaults as defaultControls } from "ol/control";
 
-import gbmap from "../assets/gbmap_topo.json";
-const featureData = feature(gbmap, gbmap.objects["gbmap"]);
+const featureData = feature(gbmap, gbmap.objects.gbmap);
 
-function GyengBuk() {
-  // svg를 그릴 엘리먼트 설정을 위한 ref
+class CanvasLayer extends Layer {
+  constructor(options) {
+    super(options);
 
-  // 지도 svg의 너비와 높이
-  const width = 500;
-  const height = 500;
+    this.features = options.features;
 
-  // 메르카토르 투영법 설정
-  // 우리가 가장 많이 쓰는 도법으로 구형인 지구를 평면으로 표현하는 하나의 방법이라고 하네요??
-  const projection = d3.geoMercator().scale(1).translate([0, 0]);
-  const path = d3.geoPath().projection(projection);
-  const bounds = path.bounds(featureData);
+    this.svg = d3
+      .select(document.createElement("div"))
+      .append("svg")
+      .style("position", "absolute");
 
-  // svg의 크기에 따른 지도의 크기와 위치값을 설정합니다.
-  const dx = bounds[1][0] - bounds[0][0];
-  const dy = bounds[1][1] - bounds[0][1];
-  const x = (bounds[0][0] + bounds[1][0]) / 2;
-  const y = (bounds[0][1] + bounds[1][1]) / 2;
-  const scale = 0.9 / Math.max(dx / width, dy / height);
-  const translate = [width / 2 - scale * x, height / 2 - scale * y];
+    this.svg.append("path").datum(this.features).attr("class", "boundary");
+  }
 
-  projection.scale(scale).translate(translate);
+  getSourceState() {
+    return "ready";
+  }
 
-  // svg를 만들고
-  const svg = d3
-    .select(document.createElement("div"))
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
+  render(frameState) {
+    const width = frameState.size[0];
+    const height = frameState.size[1];
+    const projection = frameState.viewState.projection;
+    const d3Projection = d3.geoMercator().scale(1).translate([0, 0]);
+    let d3Path = d3.geoPath().projection(d3Projection);
 
-  const mapLayer = svg.append("g");
+    const pixelBounds = d3Path.bounds(this.features);
+    const pixelBoundsWidth = pixelBounds[1][0] - pixelBounds[0][0];
+    const pixelBoundsHeight = pixelBounds[1][1] - pixelBounds[0][1];
 
-  // topoJSON의 데이터를 그려줍니다.
-  mapLayer
-    .selectAll("path")
-    .data(featureData.features)
-    .enter()
-    .append("path")
-    .attr("d", path)
-    .style("fill", "#666");
+    const geoBounds = d3.geoBounds(this.features);
+    const geoBoundsLeftBottom = fromLonLat(geoBounds[0], projection);
+    const geoBoundsRightTop = fromLonLat(geoBounds[1], projection);
+    let geoBoundsWidth = geoBoundsRightTop[0] - geoBoundsLeftBottom[0];
+    if (geoBoundsWidth < 0) {
+      geoBoundsWidth += getWidth(projection.getExtent());
+    }
+    const geoBoundsHeight = geoBoundsRightTop[1] - geoBoundsLeftBottom[1];
 
-  return svg.node();
+    const widthResolution = geoBoundsWidth / pixelBoundsWidth;
+    const heightResolution = geoBoundsHeight / pixelBoundsHeight;
+    const r = Math.max(widthResolution, heightResolution);
+    const scale = r / frameState.viewState.resolution;
+
+    const center = toLonLat(getCenter(frameState.extent), projection);
+    const angle = (-frameState.viewState.rotation * 180) / Math.PI;
+
+    d3Projection
+      .scale(scale)
+      .center(center)
+      .translate([width / 2, height / 2])
+      .angle(angle);
+
+    d3Path = d3Path.projection(d3Projection);
+    d3Path(this.features);
+
+    this.svg.attr("width", width);
+    this.svg.attr("height", height);
+
+    this.svg.select("path").attr("d", d3Path);
+
+    return this.svg.node();
+  }
 }
 
 const Map = ({ children }) => {
   const [mapObj, setMapObj] = useState({});
 
   useEffect(() => {
-    // Map 객체 생성 및 OSM 배경지도 추가
     const map = new OlMap({
-      controls: defaultControls({ zoom: false, rotate: false }).extend([]),
       layers: [
         new TileLayer({
           source: new OSM(),
@@ -80,13 +99,10 @@ const Map = ({ children }) => {
       }),
     });
 
-    d3.json("../assets/gbmap_topo.json", function (us) {
-      const layer = new GyengBuk({
-        features: TopoJSON.feature(us, us.objects.counties),
-      });
-
-      map.addLayer(layer);
+    const layer = new CanvasLayer({
+      features: featureData,
     });
+    map.addLayer(layer);
     setMapObj({ map });
     return () => map.setTarget(undefined);
   }, []);
