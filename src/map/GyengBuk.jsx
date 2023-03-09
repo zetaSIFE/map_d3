@@ -16,43 +16,39 @@ export default function GyengBuk() {
   const chart = useRef(null);
 
   const printD3 = () => {
-    // 지도 svg의 너비와 높이
-    const width = 800;
-    const height = 800;
+    const width = 700; //지도의 넓이
+    const height = 700; //지도의 높이
+    const initialScale = 5500; //확대시킬 값
+    const initialX = -11900; //초기 위치값 X
+    const initialY = 4050; //초기 위치값 Y
 
-    // 메르카토르 투영법 설정
-    // 우리가 가장 많이 쓰는 도법으로 구형인 지구를 평면으로 표현하는 하나의 방법이라고 하네요??
-    const projection = d3.geoMercator().scale(1).translate([0, 0]);
+    const projection = d3
+      .geoMercator()
+      .scale(initialScale)
+      .translate([initialX, initialY]);
+
     const path = d3.geoPath().projection(projection);
-    const bounds = path.bounds(featureData);
 
-    // svg의 크기에 따른 지도의 크기와 위치값을 설정합니다.
-    const dx = bounds[1][0] - bounds[0][0];
-    const dy = bounds[1][1] - bounds[0][1];
-    const x = (bounds[0][0] + bounds[1][0]) / 2;
-    const y = (bounds[0][1] + bounds[1][1]) / 2;
-    const scale = 0.9 / Math.max(dx / width, dy / height);
-    const translate = [width / 2 - scale * x, height / 2 - scale * y];
-
-    projection.scale(scale).translate(translate);
-
-    // svg를 만들고
     const svg = d3
       .select(chart.current)
       .append("svg")
-      .attr("width", width)
-      .attr("height", height);
+      .attr("width", width + "px")
+      .attr("height", height + "px");
 
-    const mapLayer = svg.append("g");
+    const states = svg.append("g").attr("id", "states");
 
-    // topoJSON의 데이터를 그려줍니다.
-    mapLayer
-      .selectAll("path")
+    states
+      .append("rect")
+      .attr("class", "background")
+      .attr("width", width + "px")
+      .attr("height", height + "px");
+
+    states
+      .selectAll("path") //지역 설정
       .data(featureData.features)
       .enter()
       .append("path")
-      .attr("d", path)
-      .style("fill", "#666");
+      .attr("d", path);
   };
 
   useEffect(() => {
