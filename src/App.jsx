@@ -18,10 +18,10 @@ function App() {
   return (
     <>
       {/* <div>Hello</div> */}
-      <GyengBuk />
+      {/* <GyengBuk /> */}
       <button onClick={handleZoomInClick}>zoomIn</button>
       <button onClick={handleZoomOutClick}>zoomOut</button>
-      <div id="map" style={{ width: "100%", height: 400 }}></div>
+      <div id="map" style={{ width: "100%", height: 1000 }}></div>
     </>
   );
 }

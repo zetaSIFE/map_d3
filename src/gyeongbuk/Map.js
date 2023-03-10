@@ -102,7 +102,7 @@ const Map = ({ children }) => {
           [127.9745613, 37.3236563],
           getProjection("EPSG:3857")
         ),
-        zoom: 5,
+        zoom: 7,
       }),
     });
 
