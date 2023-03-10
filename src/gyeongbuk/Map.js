@@ -25,7 +25,14 @@ class CanvasLayer extends Layer {
       .append("svg")
       .style("position", "absolute");
 
-    this.svg.append("path").datum(this.features).attr("class", "boundary");
+    this.svg.append("g").attr("id", "states");
+
+    this.svg
+      .select("g")
+      .selectAll("path")
+      .data(featureData.features)
+      .enter()
+      .append("path");
   }
 
   getSourceState() {
@@ -72,7 +79,7 @@ class CanvasLayer extends Layer {
     this.svg.attr("width", width);
     this.svg.attr("height", height);
 
-    this.svg.select("path").attr("d", d3Path);
+    this.svg.selectAll("path").attr("d", d3Path);
 
     return this.svg.node();
   }
