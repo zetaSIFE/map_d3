@@ -2,7 +2,7 @@ import { Map as OlMap, MapEvent } from "ol";
 import View from "ol/View.js";
 import { Layer, Tile as TileLayer, Vector } from "ol/layer.js";
 import { fromLonLat, toLonLat, get as getProjection } from "ol/proj.js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MapContext from "./MapContext";
 import { OSM } from "ol/source";
 import VectorLayer from "ol/layer/Vector";
@@ -32,7 +32,7 @@ const vectorLayer = new VectorLayer({
     style: style
 });
 
-const Map = ({ children }) => {
+const Map = ({ children, setCity, setMouseHover, mousePosition }) => {
   const [mapObj, setMapObj] = useState({});
 
   useEffect(() => {
@@ -66,9 +66,25 @@ const Map = ({ children }) => {
       })
     })
 
+    const mousemove = (event) => {
+      console.log("pageX: ",event.pageX, 
+      "pageY: ", event.pageY, 
+      "clientX: ", event.clientX, 
+      "clientY:", event.clientY)
+
+      mousePosition.current[0] = event.clientX;
+      mousePosition.current[1] = event.clientY;
+    }
+
     test.getFeatures().on("add", function(e){
-      console.log(e.element.values_.SIG_KOR_NM)
-      
+      setCity(e.element.values_.SIG_KOR_NM);    
+      setMouseHover(true);
+      window.addEventListener('mousemove', mousemove);
+    })
+
+    test.getFeatures().on("remove", function(e){
+      setMouseHover(false);
+      window.removeEventListener('mousemove', mousemove);
     })
 
     map.addInteraction(test)
